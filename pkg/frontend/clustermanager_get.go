@@ -29,12 +29,14 @@ func (f *frontend) _getClusterManagerConfiguration(ctx context.Context, log *log
 	vars := mux.Vars(r)
 
 	doc, err := f.dbClusterManagerConfiguration.Get(ctx, r.URL.Path)
-	switch {
-	case cosmosdb.IsErrorStatusCode(err, http.StatusNotFound):
-		return nil, api.NewCloudError(http.StatusNotFound, api.CloudErrorCodeResourceNotFound, "", "The Resource '%s/%s/%s/%s' under resource group '%s' was not found.",
-			vars["resourceType"], vars["resourceName"], vars["ocmResourceType"], vars["ocmResourceName"], vars["resourceGroupName"])
-	case err != nil:
-		return nil, err
+	if err != nil {
+		switch {
+		case cosmosdb.IsErrorStatusCode(err, http.StatusNotFound):
+			return nil, api.NewCloudError(http.StatusNotFound, api.CloudErrorCodeResourceNotFound, "", "The Resource '%s/%s/%s/%s' under resource group '%s' was not found.",
+				vars["resourceType"], vars["resourceName"], vars["ocmResourceType"], vars["ocmResourceName"], vars["resourceGroupName"])
+		default:
+			return nil, err
+		}
 	}
 
 	if doc.Deleting {
